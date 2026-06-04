@@ -31,6 +31,7 @@ const defaultForm = {
   wager: '',
   odds: '',
   result: 'Pending',
+  followingCoaching: false,
 }
 
 const RESULT_STYLES = {
@@ -177,6 +178,20 @@ function Modal({ onClose, onSave }) {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div className="flex items-center justify-between bg-[#0f0f1a] border border-white/10 rounded-lg px-3 py-2.5">
+              <div>
+                <p className="text-sm text-white font-medium">Following coaching today?</p>
+                <p className="text-xs text-gray-600 mt-0.5">Tracks your coached vs uncoached win rate</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => set('followingCoaching', !form.followingCoaching)}
+                className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${form.followingCoaching ? 'bg-[#00d4aa]' : 'bg-white/10'}`}
+              >
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${form.followingCoaching ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
             </div>
 
             {validPayout && (
