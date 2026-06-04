@@ -5,9 +5,11 @@ import BetLog from './pages/BetLog'
 import Calendar from './pages/Calendar'
 import BankrollCoach from './pages/BankrollCoach'
 import Leaderboard from './pages/Leaderboard'
+import { BetsProvider } from './context/BetsContext'
 
 function App() {
   return (
+    <BetsProvider>
     <BrowserRouter>
       <Navbar />
       <Routes>
@@ -18,6 +20,7 @@ function App() {
         <Route path="/leaderboard" element={<Leaderboard />} />
       </Routes>
     </BrowserRouter>
+    </BetsProvider>
   )
 }
 

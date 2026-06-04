@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useBets } from '../context/BetsContext'
 
 const SPORTS = ['NFL', 'NBA', 'MLB', 'NHL', 'NCAA Football', 'NCAA Basketball', 'Soccer', 'Tennis', 'Golf', 'MMA', 'Other']
 const SPORTSBOOKS = ['DraftKings', 'FanDuel', 'BetMGM', 'Caesars', 'Fanatics', 'PointsBet', 'Other']
@@ -298,11 +299,8 @@ function SummaryBar({ bets }) {
 }
 
 function BetLog() {
-  const [bets, setBets] = useState([])
+  const { bets, addBet, deleteBet } = useBets()
   const [showModal, setShowModal] = useState(false)
-
-  const addBet = (bet) => setBets(prev => [bet, ...prev])
-  const deleteBet = (id) => setBets(prev => prev.filter(b => b.id !== id))
 
   return (
     <div className="min-h-screen bg-[#0f0f1a] text-white p-4 md:p-6 max-w-2xl mx-auto">
