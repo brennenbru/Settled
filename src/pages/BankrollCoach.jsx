@@ -22,8 +22,11 @@ function formatPL(v) {
 function ProgressBar({ pct, color }) {
   const clamped = Math.min(100, Math.max(0, pct))
   return (
-    <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-      <div className={`h-full rounded-full transition-all duration-500 ${color}`} style={{ width: `${clamped}%` }} />
+    <div className="h-2.5 bg-white/[0.06] rounded-full overflow-hidden">
+      <div
+        className={`h-full rounded-full transition-all duration-700 ease-out ${color}`}
+        style={{ width: `${clamped}%`, boxShadow: clamped > 0 ? '0 0 8px currentColor' : 'none' }}
+      />
     </div>
   )
 }
@@ -47,12 +50,15 @@ function SetupForm({ initial, onSave }) {
   return (
     <div className="max-w-lg mx-auto">
       <div className="text-center mb-8">
-        <div className="w-14 h-14 bg-[#00d4aa]/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <svg className="w-7 h-7 text-[#00d4aa]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-          </svg>
+        <div className="relative w-16 h-16 mx-auto mb-5">
+          <div className="absolute inset-0 bg-[#00d4aa]/20 rounded-2xl blur-xl" />
+          <div className="relative w-16 h-16 bg-gradient-to-br from-[#00d4aa]/20 to-[#00d4aa]/5 rounded-2xl border border-[#00d4aa]/20 flex items-center justify-center">
+            <svg className="w-8 h-8 text-[#00d4aa]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+          </div>
         </div>
-        <h2 className="text-2xl font-bold text-white">Let's set up your coaching profile</h2>
+        <h2 className="text-2xl font-bold text-white tracking-tight">Let's set up your coaching profile</h2>
         <p className="text-gray-500 text-sm mt-2">We'll use this to give you personalized advice every day.</p>
       </div>
 
@@ -87,7 +93,7 @@ function SetupForm({ initial, onSave }) {
           </div>
         </div>
 
-        <div className="bg-[#1a1a2e] rounded-2xl p-5 border border-white/5">
+        <div className="bg-[#1a1a2e] rounded-2xl p-6 border border-white/5 shadow-lg hover:border-white/10 transition-colors">
           <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">Risk Level</h3>
           <div className="space-y-2">
             {RISK_LEVELS.map(r => (
@@ -112,7 +118,7 @@ function SetupForm({ initial, onSave }) {
           </div>
         </div>
 
-        <button type="submit" className="w-full py-4 bg-[#00d4aa] text-[#0f0f1a] font-bold rounded-2xl hover:bg-[#00bfa0] transition-colors text-base">
+        <button type="submit" className="w-full py-4 bg-[#00d4aa] text-[#0f0f1a] font-bold rounded-2xl hover:bg-[#00bfa0] hover:scale-[1.02] transition-all text-base shadow-lg shadow-[#00d4aa]/20">
           Save My Profile
         </button>
       </form>
@@ -169,7 +175,7 @@ function AIInsights({ bets }) {
 
   if (bets.length < 5) {
     return (
-      <div className="bg-[#1a1a2e] rounded-2xl p-5 border border-white/5">
+      <div className="bg-[#1a1a2e] rounded-2xl p-6 border border-white/5 shadow-lg hover:border-white/10 transition-colors">
         <h3 className="font-bold text-white mb-1">Your Betting Patterns</h3>
         <p className="text-gray-500 text-sm">Log at least 5 bets to unlock AI insights.</p>
         <div className="mt-3 bg-[#0f0f1a] rounded-xl p-3 flex items-center gap-2">
@@ -273,7 +279,7 @@ function CoachingDashboard({ profile, bets, onEditGoals }) {
     <div className="space-y-4">
 
       {/* Today's Status */}
-      <div className="bg-[#1a1a2e] rounded-2xl p-5 border border-white/5">
+      <div className="bg-[#1a1a2e] rounded-2xl p-6 border border-white/5 shadow-lg hover:border-white/10 transition-colors">
         <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Today's Status</h3>
 
         <div className="flex items-start justify-between mb-4">
@@ -314,7 +320,7 @@ function CoachingDashboard({ profile, bets, onEditGoals }) {
       </div>
 
       {/* Coached vs Uncoached */}
-      <div className="bg-[#1a1a2e] rounded-2xl p-5 border border-white/5">
+      <div className="bg-[#1a1a2e] rounded-2xl p-6 border border-white/5 shadow-lg hover:border-white/10 transition-colors">
         <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Coaching Impact</h3>
         <div className="grid grid-cols-3 gap-3">
           <div className="text-center">
@@ -353,7 +359,7 @@ function CoachingDashboard({ profile, bets, onEditGoals }) {
       <AIInsights bets={bets} />
 
       {/* Unit Size */}
-      <div className="bg-[#1a1a2e] rounded-2xl p-5 border border-white/5">
+      <div className="bg-[#1a1a2e] rounded-2xl p-6 border border-white/5 shadow-lg hover:border-white/10 transition-colors">
         <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Recommended Unit Size</h3>
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -385,7 +391,7 @@ function CoachingDashboard({ profile, bets, onEditGoals }) {
       </div>
 
       {/* My Goals */}
-      <div className="bg-[#1a1a2e] rounded-2xl p-5 border border-white/5">
+      <div className="bg-[#1a1a2e] rounded-2xl p-6 border border-white/5 shadow-lg hover:border-white/10 transition-colors">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">My Goals</h3>
           <button onClick={onEditGoals} className="text-[#00d4aa] text-xs font-semibold hover:underline">Edit Goals</button>
@@ -424,9 +430,9 @@ function BankrollCoach() {
   const showSetup = !profile || editing
 
   return (
-    <div className="min-h-screen bg-[#0f0f1a] text-white p-4 md:p-6 max-w-2xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Bankroll Coach</h1>
+    <div className="min-h-screen bg-[#0f0f1a] text-white p-4 md:p-8 max-w-2xl mx-auto">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">Bankroll Coach</h1>
         {profile && !editing && (
           <span className="text-xs text-[#00d4aa] bg-[#00d4aa]/10 border border-[#00d4aa]/20 px-3 py-1 rounded-full font-medium">
             Active

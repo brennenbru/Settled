@@ -92,53 +92,53 @@ const selectedDateStr = selectedDay
   const selectedBets = selectedDateStr ? (betsByDate[selectedDateStr] ?? []) : []
 
   return (
-    <div className="min-h-screen bg-[#0f0f1a] text-white p-4 md:p-6 max-w-2xl mx-auto">
+    <div className="min-h-screen bg-[#0f0f1a] text-white p-4 md:p-8 max-w-2xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-6">
         <button
           onClick={prevMonth}
-          className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#1a1a2e] border border-white/10 hover:border-white/30 text-gray-400 hover:text-white transition-colors text-lg"
+          className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#1a1a2e] border border-white/10 hover:border-white/30 hover:scale-105 text-gray-400 hover:text-white transition-all text-lg shadow-lg"
         >
           ←
         </button>
-        <h2 className="text-lg font-bold">{MONTHS[viewMonth]} {viewYear}</h2>
+        <h2 className="text-xl font-black tracking-tight">{MONTHS[viewMonth]} {viewYear}</h2>
         <button
           onClick={nextMonth}
-          className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#1a1a2e] border border-white/10 hover:border-white/30 text-gray-400 hover:text-white transition-colors text-lg"
+          className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#1a1a2e] border border-white/10 hover:border-white/30 hover:scale-105 text-gray-400 hover:text-white transition-all text-lg shadow-lg"
         >
           →
         </button>
       </div>
 
       {/* Monthly summary */}
-      <div className="grid grid-cols-4 gap-2 mb-5">
-        <div className="bg-[#1a1a2e] rounded-xl p-3 border border-white/5 text-center">
-          <p className="text-gray-500 text-xs mb-1">Monthly P&L</p>
+      <div className="grid grid-cols-4 gap-2 mb-6">
+        <div className="bg-[#1a1a2e] rounded-2xl p-3 border border-white/5 shadow-lg text-center">
+          <p className="text-gray-500 text-[10px] uppercase tracking-widest font-semibold mb-1.5">Monthly P&L</p>
           <p className={`text-sm font-bold ${monthPL > 0 ? 'text-green-400' : monthPL < 0 ? 'text-red-400' : 'text-white'}`}>
             {monthBets.length === 0 ? '—' : formatPL(monthPL)}
           </p>
         </div>
-        <div className="bg-[#1a1a2e] rounded-xl p-3 border border-white/5 text-center">
-          <p className="text-gray-500 text-xs mb-1">Record</p>
-          <p className="text-sm font-bold text-white">
+        <div className="bg-[#1a1a2e] rounded-2xl p-3 border border-white/5 shadow-lg text-center">
+          <p className="text-gray-500 text-[10px] uppercase tracking-widest font-semibold mb-1.5">Record</p>
+          <p className="text-sm font-black text-white tracking-tight">
             {monthBets.length === 0 ? '—' : `${monthWins}-${monthLosses}-${monthPushes}`}
           </p>
         </div>
-        <div className="bg-[#1a1a2e] rounded-xl p-3 border border-white/5 text-center">
-          <p className="text-gray-500 text-xs mb-1">Win %</p>
+        <div className="bg-[#1a1a2e] rounded-2xl p-3 border border-white/5 shadow-lg text-center">
+          <p className="text-gray-500 text-[10px] uppercase tracking-widest font-semibold mb-1.5">Win %</p>
           <p className={`text-sm font-bold ${monthWinRate !== null && parseFloat(monthWinRate) >= 50 ? 'text-green-400' : monthWinRate !== null ? 'text-red-400' : 'text-white'}`}>
             {monthWinRate !== null ? `${monthWinRate}%` : '—'}
           </p>
         </div>
-        <div className="bg-[#1a1a2e] rounded-xl p-3 border border-white/5 text-center">
-          <p className="text-gray-500 text-xs mb-1">Total Bets</p>
-          <p className="text-sm font-bold text-white">{monthBets.length || '—'}</p>
+        <div className="bg-[#1a1a2e] rounded-2xl p-3 border border-white/5 shadow-lg text-center">
+          <p className="text-gray-500 text-[10px] uppercase tracking-widest font-semibold mb-1.5">Total Bets</p>
+          <p className="text-sm font-black text-white tracking-tight">{monthBets.length || '—'}</p>
         </div>
       </div>
 
       {/* Calendar grid */}
       {/* gap-px on a colored bg = perfect 1px borders on all 4 sides of every cell */}
-      <div className="rounded-xl overflow-hidden mb-4 bg-white/[0.06]">
+      <div className="rounded-2xl overflow-hidden mb-5 bg-white/[0.06] shadow-xl">
         {/* Day headers */}
         <div className="grid grid-cols-7 gap-px bg-white/[0.06]">
           {DAYS.map(d => (
@@ -220,7 +220,7 @@ const selectedDateStr = selectedDay
 
       {/* Day detail panel */}
       {selectedDay !== null && (
-        <div className="bg-[#1a1a2e] rounded-xl border border-white/10 overflow-hidden">
+        <div className="bg-[#1a1a2e] rounded-2xl border border-white/10 overflow-hidden shadow-xl">
           <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-white">
               {MONTHS[viewMonth]} {selectedDay}, {viewYear}

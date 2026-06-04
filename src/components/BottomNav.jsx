@@ -55,7 +55,7 @@ function BottomNav() {
   const { pathname } = useLocation()
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#1a1a2e] border-t border-white/10 z-50">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#1a1a2e]/90 backdrop-blur-md border-t border-white/5 z-50">
       <div className="flex">
         {TABS.map(({ to, label, icon }) => {
           const active = pathname === to

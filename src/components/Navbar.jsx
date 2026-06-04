@@ -12,8 +12,8 @@ function Navbar() {
   const { pathname } = useLocation()
 
   return (
-    <nav className="flex items-center px-6 py-4 bg-[#1a1a2e]">
-      <span className="text-[#00d4aa] font-bold text-xl mr-auto">Settled</span>
+    <nav className="sticky top-0 z-40 flex items-center px-6 py-4 bg-[#1a1a2e]/90 backdrop-blur-md border-b border-white/5">
+      <span className="text-[#00d4aa] font-bold text-xl mr-auto tracking-tight">Settled</span>
       {/* Desktop links — hidden on mobile */}
       <div className="hidden md:flex items-center gap-6">
         {NAV_LINKS.map(({ to, label }) => (

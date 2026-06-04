@@ -19,10 +19,10 @@ function calcUnits(bet) {
 
 function StatCard({ label, value, sub, valueClass }) {
   return (
-    <div className="bg-[#1a1a2e] rounded-xl p-5 border border-white/5">
-      <p className="text-gray-500 text-xs mb-2">{label}</p>
-      <p className={`text-2xl font-bold ${valueClass ?? 'text-white'}`}>{value}</p>
-      {sub && <p className="text-gray-600 text-xs mt-1">{sub}</p>}
+    <div className="bg-[#1a1a2e] rounded-2xl p-5 border border-white/5 shadow-lg hover:border-white/10 hover:-translate-y-0.5 transition-all duration-200">
+      <p className="text-gray-500 text-[10px] mb-2 uppercase tracking-widest font-semibold">{label}</p>
+      <p className={`text-2xl font-black tracking-tight ${valueClass ?? 'text-white'}`}>{value}</p>
+      {sub && <p className="text-gray-600 text-xs mt-1.5 font-medium">{sub}</p>}
     </div>
   )
 }
@@ -76,10 +76,10 @@ function Dashboard() {
   const plValue = bets.length === 0 ? '$0.00' : totalPL >= 0 ? `+$${totalPL.toFixed(2)}` : `-$${Math.abs(totalPL).toFixed(2)}`
 
   return (
-    <div className="min-h-screen bg-[#0f0f1a] text-white p-4 md:p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+    <div className="min-h-screen bg-[#0f0f1a] text-white p-4 md:p-8 max-w-3xl mx-auto">
+      <h1 className="text-3xl font-black mb-8 tracking-tight">Dashboard</h1>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
         <StatCard
           label="Total Profit"
           value={plValue}
@@ -104,21 +104,21 @@ function Dashboard() {
       </div>
 
       {bets.length === 0 ? (
-        <div className="bg-[#1a1a2e] rounded-xl p-12 text-center border border-white/5">
-          <p className="text-gray-400 font-medium mb-1">No bets yet</p>
-          <p className="text-gray-600 text-sm mb-4">Head to Bet Log to get started</p>
+        <div className="bg-[#1a1a2e] rounded-2xl p-14 text-center border border-white/5 shadow-lg">
+          <p className="text-gray-400 font-semibold mb-1">No bets yet</p>
+          <p className="text-gray-600 text-sm mb-5">Head to Bet Log to get started</p>
           <Link
             to="/betlog"
-            className="inline-block bg-[#00d4aa] text-[#0f0f1a] font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-[#00bfa0] transition-colors"
+            className="inline-block bg-[#00d4aa] text-[#0f0f1a] font-bold px-6 py-3 rounded-xl text-sm hover:bg-[#00bfa0] hover:scale-105 transition-all"
           >
             Go to Bet Log
           </Link>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
-          <div className="bg-[#1a1a2e] rounded-xl p-5 border border-white/5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-gray-300">Recent Bets</h2>
+          <div className="bg-[#1a1a2e] rounded-2xl p-6 border border-white/5 shadow-lg hover:border-white/10 transition-colors">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wide">Recent Bets</h2>
               <Link to="/betlog" className="text-[#00d4aa] text-xs hover:underline">View all</Link>
             </div>
             {recent.map(bet => (
@@ -126,8 +126,8 @@ function Dashboard() {
             ))}
           </div>
 
-          <div className="bg-[#1a1a2e] rounded-xl p-5 border border-white/5">
-            <h2 className="text-sm font-semibold text-gray-300 mb-4">Performance Summary</h2>
+          <div className="bg-[#1a1a2e] rounded-2xl p-6 border border-white/5 shadow-lg hover:border-white/10 transition-colors">
+            <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-5">Performance Summary</h2>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-gray-500 text-sm">Biggest Win</span>

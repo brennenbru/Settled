@@ -69,9 +69,9 @@ function Modal({ onClose, onSave }) {
       className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-[#1a1a2e] rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-white/10">
+      <div className="bg-[#1a1a2e] rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-white/10 shadow-2xl">
         <div className="p-6">
-          <h2 className="text-xl font-bold text-white mb-6">Log a Bet</h2>
+          <h2 className="text-2xl font-bold text-white mb-6 tracking-tight">Log a Bet</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -217,7 +217,7 @@ function Modal({ onClose, onSave }) {
               </button>
               <button
                 type="submit"
-                className="flex-1 py-3 rounded-xl bg-[#00d4aa] text-[#0f0f1a] font-bold text-sm hover:bg-[#00bfa0] transition-colors"
+                className="flex-1 py-3 rounded-xl bg-[#00d4aa] text-[#0f0f1a] font-bold text-sm hover:bg-[#00bfa0] hover:scale-[1.02] transition-all"
               >
                 Save Bet
               </button>
@@ -234,11 +234,11 @@ function BetCard({ bet, onDelete }) {
   const hasPL = pl !== null
 
   return (
-    <div className="bg-[#1a1a2e] rounded-xl p-4 border border-white/5 hover:border-white/10 transition-colors">
-      <div className="flex items-start justify-between gap-3 mb-3">
+    <div className="bg-[#1a1a2e] rounded-2xl p-5 border border-white/5 shadow-lg hover:border-white/10 hover:-translate-y-0.5 transition-all duration-200">
+      <div className="flex items-start justify-between gap-3 mb-4">
         <div className="flex-1 min-w-0">
-          <p className="text-white font-semibold text-sm leading-tight truncate">{bet.description}</p>
-          <p className="text-gray-500 text-xs mt-0.5">{bet.sport} · {bet.sportsbook} · {bet.betType}</p>
+          <p className="text-white font-bold text-sm leading-tight truncate tracking-tight">{bet.description}</p>
+          <p className="text-gray-500 text-xs mt-1 font-medium">{bet.sport} · {bet.sportsbook} · {bet.betType}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${RESULT_STYLES[bet.result]}`}>
@@ -304,9 +304,9 @@ function SummaryBar({ bets }) {
         },
         { label: 'Record', value: `${wins}-${losses}-${pushes}` },
       ].map(({ label, value, color }) => (
-        <div key={label} className="bg-[#1a1a2e] rounded-xl p-4 border border-white/5">
-          <p className="text-gray-500 text-xs mb-1">{label}</p>
-          <p className={`text-lg font-bold ${color ?? 'text-white'}`}>{value}</p>
+        <div key={label} className="bg-[#1a1a2e] rounded-2xl p-5 border border-white/5 shadow-lg hover:border-white/10 hover:-translate-y-0.5 transition-all duration-200">
+          <p className="text-gray-500 text-[10px] mb-1.5 uppercase tracking-widest font-semibold">{label}</p>
+          <p className={`text-xl font-black tracking-tight ${color ?? 'text-white'}`}>{value}</p>
         </div>
       ))}
     </div>
@@ -318,12 +318,12 @@ function BetLog() {
   const [showModal, setShowModal] = useState(false)
 
   return (
-    <div className="min-h-screen bg-[#0f0f1a] text-white p-4 md:p-6 max-w-2xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Bet Log</h1>
+    <div className="min-h-screen bg-[#0f0f1a] text-white p-4 md:p-8 max-w-2xl mx-auto">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-black tracking-tight">Bet Log</h1>
         <button
           onClick={() => setShowModal(true)}
-          className="bg-[#00d4aa] text-[#0f0f1a] font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-[#00bfa0] transition-colors"
+          className="bg-[#00d4aa] text-[#0f0f1a] font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-[#00bfa0] hover:scale-105 transition-all shadow-lg shadow-[#00d4aa]/20"
         >
           + Log a Bet
         </button>
@@ -332,7 +332,7 @@ function BetLog() {
       <SummaryBar bets={bets} />
 
       {bets.length === 0 ? (
-        <div className="bg-[#1a1a2e] rounded-xl p-10 text-center border border-white/5">
+        <div className="bg-[#1a1a2e] rounded-2xl p-14 text-center border border-white/5 shadow-lg">
           <p className="text-gray-500">No bets logged yet.</p>
           <p className="text-gray-600 text-sm mt-1">Hit "Log a Bet" to add your first.</p>
         </div>
