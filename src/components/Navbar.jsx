@@ -68,17 +68,18 @@ function Navbar() {
       {/* Mobile drawer — only rendered on mobile via md:hidden on trigger, but drawer itself is always in DOM */}
       {drawerOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop — z-[55] sits above bottom nav (z-50) */}
           <div
-            className="md:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+            className="md:hidden fixed inset-0 z-[55] bg-black/60 backdrop-blur-sm"
             onClick={closeDrawer}
           />
 
-          {/* Slide-up panel */}
-          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#1a1a2e] border-t border-white/10 rounded-t-2xl shadow-2xl animate-slide-up">
-            {/* Handle + close button */}
-            <div className="flex items-center justify-between px-5 pt-4 pb-2">
-              <div className="w-10 h-1 bg-white/20 rounded-full mx-auto absolute left-1/2 -translate-x-1/2 top-3" />
+          {/* Slide-up panel — z-[60] sits above backdrop and bottom nav */}
+          <div className="md:hidden fixed bottom-0 left-0 right-0 z-[60] flex flex-col max-h-[85vh] bg-[#1a1a2e] border-t border-white/10 rounded-t-2xl shadow-2xl animate-slide-up">
+
+            {/* Fixed header: drag handle + close — never scrolls away */}
+            <div className="relative flex items-center justify-between px-5 pt-4 pb-2 shrink-0">
+              <div className="w-10 h-1 bg-white/20 rounded-full absolute left-1/2 -translate-x-1/2 top-3" />
               <div className="flex-1" />
               <button
                 onClick={closeDrawer}
@@ -92,50 +93,53 @@ function Navbar() {
               </button>
             </div>
 
-            {/* User email */}
-            <div className="px-5 py-3">
-              <p className="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-0.5">Signed in as</p>
-              <p className="text-white text-sm font-medium truncate">{user?.email ?? '—'}</p>
-            </div>
+            {/* Scrollable body — overflows before the panel grows past 85vh */}
+            <div className="overflow-y-auto" style={{ paddingBottom: '100px' }}>
+              {/* User email */}
+              <div className="px-5 py-3">
+                <p className="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-0.5">Signed in as</p>
+                <p className="text-white text-sm font-medium truncate">{user?.email ?? '—'}</p>
+              </div>
 
-            <div className="mx-5 border-t border-white/8" />
+              <div className="mx-5 border-t border-white/8" />
 
-            {/* Nav links */}
-            <nav className="px-3 py-2">
-              {NAV_LINKS.map(({ to, label }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  onClick={closeDrawer}
-                  className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors ${
-                    pathname === to
-                      ? 'text-[#00d4aa] bg-[#00d4aa]/10'
-                      : 'text-gray-300 hover:text-white hover:bg-white/5'
-                  }`}
+              {/* Nav links */}
+              <nav className="px-3 py-2">
+                {NAV_LINKS.map(({ to, label }) => (
+                  <Link
+                    key={to}
+                    to={to}
+                    onClick={closeDrawer}
+                    className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors ${
+                      pathname === to
+                        ? 'text-[#00d4aa] bg-[#00d4aa]/10'
+                        : 'text-gray-300 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    {label}
+                    {pathname === to && (
+                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#00d4aa]" />
+                    )}
+                  </Link>
+                ))}
+              </nav>
+
+              <div className="mx-5 border-t border-white/8" />
+
+              {/* Sign out */}
+              <div className="px-3 py-3">
+                <button
+                  onClick={handleSignOut}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
                 >
-                  {label}
-                  {pathname === to && (
-                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#00d4aa]" />
-                  )}
-                </Link>
-              ))}
-            </nav>
-
-            <div className="mx-5 border-t border-white/8" />
-
-            {/* Sign out */}
-            <div className="px-3 py-3 pb-8">
-              <button
-                onClick={handleSignOut}
-                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
-              >
-                <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-                  <polyline points="16 17 21 12 16 7" />
-                  <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
-                Sign Out
-              </button>
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  Sign Out
+                </button>
+              </div>
             </div>
           </div>
         </>
