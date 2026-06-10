@@ -3,6 +3,55 @@ import { supabase } from '../lib/supabase'
 
 const BetsContext = createContext(null)
 
+function calcProfit(wager, odds) {
+  const w = parseFloat(wager)
+  const o = parseInt(odds)
+  if (!w || isNaN(o)) return 0
+  return o > 0 ? w * (o / 100) : w * (100 / Math.abs(o))
+}
+
+function calcActualPL(wager, odds, result) {
+  if (result === 'Win') return calcProfit(wager, odds)
+  if (result === 'Loss') return -parseFloat(wager)
+  if (result === 'Push') return 0
+  return null
+}
+
+// Convert a Supabase row (snake_case) → UI bet object (camelCase + computed fields)
+function fromSupabase(row) {
+  return {
+    id: row.id,
+    date: row.date,
+    sport: row.sport,
+    sportsbook: row.sportsbook,
+    betType: row.bet_type,
+    description: row.description,
+    wager: row.wager,
+    odds: row.odds,
+    result: row.result,
+    followingCoaching: row.following_coaching,
+    profit: calcProfit(row.wager, row.odds),
+    actualPL: calcActualPL(row.wager, row.odds, row.result),
+  }
+}
+
+// Convert a UI bet object (camelCase) → Supabase row (snake_case, exact columns only)
+// Explicit type coercions guard against NaN / undefined slipping through.
+function toSupabase(bet, userId) {
+  return {
+    user_id: String(userId),
+    date: String(bet.date),           // YYYY-MM-DD
+    sport: String(bet.sport),
+    sportsbook: String(bet.sportsbook),
+    bet_type: String(bet.betType),
+    description: String(bet.description),
+    wager: Number(bet.wager),
+    odds: Math.round(Number(bet.odds)),
+    result: String(bet.result),
+    following_coaching: Boolean(bet.followingCoaching),
+  }
+}
+
 export function BetsProvider({ children }) {
   const [user, setUser] = useState(null)
   const [bets, setBets] = useState(() => {
@@ -16,12 +65,10 @@ export function BetsProvider({ children }) {
 
   // ── Auth: listen for session changes ────────────────────────────────────────
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
     })
 
-    // Subscribe to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
     })
@@ -39,8 +86,12 @@ export function BetsProvider({ children }) {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .then(({ data, error }) => {
-        if (!error && data) {
-          setBets(data)
+        if (error) {
+          console.error('[BetsContext] fetch error:', error)
+          return
+        }
+        if (data) {
+          setBets(data.map(fromSupabase))
         }
       })
   }, [user])
@@ -52,20 +103,32 @@ export function BetsProvider({ children }) {
     }
   }, [bets, user])
 
-  // ── addBet ──────────────────────────────────────────────────────────────────
+  // ── addBet — returns { error } so the caller can surface failures ───────────
   const addBet = async (bet) => {
+    console.log('[addBet] called, user:', user?.id ?? 'not logged in')
+    console.log('[addBet] incoming bet:', bet)
+
     if (user) {
+      const row = toSupabase(bet, user.id)
+      console.log('[addBet] inserting row:', row)
+
       const { data, error } = await supabase
         .from('bets')
-        .insert({ ...bet, user_id: user.id })
+        .insert(row)
         .select()
         .single()
 
-      if (!error && data) {
-        setBets(prev => [data, ...prev])
+      if (error) {
+        console.error('[addBet] Supabase error:', error)
+        return { error: error.message }
       }
+
+      console.log('[addBet] insert succeeded:', data)
+      setBets(prev => [fromSupabase(data), ...prev])
+      return { error: null }
     } else {
       setBets(prev => [bet, ...prev])
+      return { error: null }
     }
   }
 

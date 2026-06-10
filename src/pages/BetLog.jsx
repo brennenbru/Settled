@@ -43,6 +43,8 @@ const RESULT_STYLES = {
 
 function Modal({ onClose, onSave }) {
   const [form, setForm] = useState(defaultForm)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState(null)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -50,18 +52,24 @@ function Modal({ onClose, onSave }) {
   const profit = calcProfit(form.wager, form.odds)
   const validPayout = !isNaN(potentialPayout) && form.wager && form.odds
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.wager || !form.odds || !form.description) return
-    onSave({
+    setSaving(true)
+    setSaveError(null)
+    const { error } = await onSave({
       ...form,
-      id: Date.now(),
       wager: parseFloat(form.wager),
       odds: parseInt(form.odds),
       profit: calcProfit(form.wager, form.odds),
       actualPL: calcActualPL(form.wager, form.odds, form.result),
     })
-    onClose()
+    setSaving(false)
+    if (error) {
+      setSaveError(error)
+    } else {
+      onClose()
+    }
   }
 
   return (
@@ -207,6 +215,12 @@ function Modal({ onClose, onSave }) {
               </div>
             )}
 
+            {saveError && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm">
+                {saveError}
+              </div>
+            )}
+
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
@@ -217,9 +231,10 @@ function Modal({ onClose, onSave }) {
               </button>
               <button
                 type="submit"
-                className="flex-1 py-3 rounded-xl bg-[#00d4aa] text-[#0f0f1a] font-bold text-sm hover:bg-[#00bfa0] hover:scale-[1.02] transition-all"
+                disabled={saving}
+                className="flex-1 py-3 rounded-xl bg-[#00d4aa] text-[#0f0f1a] font-bold text-sm hover:bg-[#00bfa0] hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                Save Bet
+                {saving ? 'Saving…' : 'Save Bet'}
               </button>
             </div>
           </form>

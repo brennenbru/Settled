@@ -18,9 +18,11 @@ export default function Auth() {
     setMessage(null)
 
     if (mode === 'signup') {
-      const { error } = await supabase.auth.signUp({ email, password })
+      const { data, error } = await supabase.auth.signUp({ email, password })
       if (error) {
         setError(error.message)
+      } else if (data?.user) {
+        navigate('/dashboard')
       } else {
         setMessage('Check your email for a confirmation link.')
       }
