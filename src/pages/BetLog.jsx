@@ -22,18 +22,6 @@ function calcActualPL(wager, odds, result) {
 
 const today = () => new Date().toISOString().split('T')[0]
 
-const defaultForm = {
-  date: today(),
-  sport: 'NFL',
-  sportsbook: 'DraftKings',
-  betType: 'Moneyline',
-  description: '',
-  wager: '',
-  odds: '',
-  result: 'Pending',
-  followingCoaching: false,
-}
-
 const RESULT_STYLES = {
   Win: 'bg-green-500/20 text-green-400 border border-green-500/30',
   Loss: 'bg-red-500/20 text-red-400 border border-red-500/30',
@@ -41,8 +29,38 @@ const RESULT_STYLES = {
   Pending: 'bg-gray-500/20 text-gray-400 border border-gray-500/30',
 }
 
-function Modal({ onClose, onSave }) {
-  const [form, setForm] = useState(defaultForm)
+function getMostUsed(bets, key, fallback) {
+  if (!bets || !bets.length) return fallback
+  const counts = {}
+  bets.forEach(b => { if (b[key]) counts[b[key]] = (counts[b[key]] || 0) + 1 })
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1])
+  return sorted.length ? sorted[0][0] : fallback
+}
+
+function getLastWager() {
+  try { return localStorage.getItem('settled_last_wager') || '' } catch { return '' }
+}
+
+function persistLastWager(val) {
+  try { localStorage.setItem('settled_last_wager', String(val)) } catch {}
+}
+
+function Modal({ onClose, onSave, bets }) {
+  const [quickMode, setQuickMode] = useState(true)
+  const [savedCount, setSavedCount] = useState(0)
+
+  const [form, setForm] = useState(() => ({
+    date: today(),
+    sport: getMostUsed(bets, 'sport', 'NBA'),
+    sportsbook: getMostUsed(bets, 'sportsbook', 'DraftKings'),
+    betType: getMostUsed(bets, 'betType', 'Moneyline'),
+    description: '',
+    wager: getLastWager(),
+    odds: '',
+    result: 'Pending',
+    followingCoaching: false,
+  }))
+
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState(null)
 
@@ -52,11 +70,11 @@ function Modal({ onClose, onSave }) {
   const profit = calcProfit(form.wager, form.odds)
   const validPayout = !isNaN(potentialPayout) && form.wager && form.odds
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const handleSave = async (keepOpen) => {
     if (!form.wager || !form.odds || !form.description) return
     setSaving(true)
     setSaveError(null)
+    persistLastWager(form.wager)
     const { error } = await onSave({
       ...form,
       wager: parseFloat(form.wager),
@@ -67,10 +85,15 @@ function Modal({ onClose, onSave }) {
     setSaving(false)
     if (error) {
       setSaveError(error)
+    } else if (keepOpen) {
+      setForm(f => ({ ...f, description: '', odds: '' }))
+      setSavedCount(c => c + 1)
     } else {
       onClose()
     }
   }
+
+  const inputClass = 'w-full bg-[#0f0f1a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-[#00d4aa]'
 
   return (
     <div
@@ -79,62 +102,94 @@ function Modal({ onClose, onSave }) {
     >
       <div className="bg-[#1a1a2e] rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-white/10 shadow-2xl">
         <div className="p-6">
-          <h2 className="text-2xl font-bold text-white mb-6 tracking-tight">Log a Bet</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Date</label>
-                <input
-                  type="date"
-                  value={form.date}
-                  onChange={e => set('date', e.target.value)}
-                  className="w-full bg-[#0f0f1a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#00d4aa]"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Sport</label>
-                <select
-                  value={form.sport}
-                  onChange={e => set('sport', e.target.value)}
-                  className="w-full bg-[#0f0f1a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#00d4aa]"
-                >
-                  {SPORTS.map(s => <option key={s}>{s}</option>)}
-                </select>
-              </div>
-            </div>
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-2xl font-bold text-white tracking-tight">Log a Bet</h2>
+          </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Sportsbook</label>
-                <select
-                  value={form.sportsbook}
-                  onChange={e => set('sportsbook', e.target.value)}
-                  className="w-full bg-[#0f0f1a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#00d4aa]"
-                >
-                  {SPORTSBOOKS.map(s => <option key={s}>{s}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Bet Type</label>
-                <select
-                  value={form.betType}
-                  onChange={e => set('betType', e.target.value)}
-                  className="w-full bg-[#0f0f1a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#00d4aa]"
-                >
-                  {BET_TYPES.map(b => <option key={b}>{b}</option>)}
-                </select>
-              </div>
-            </div>
+          {/* Mode toggle */}
+          <div className="flex items-center gap-1 bg-[#0f0f1a] rounded-xl p-1 border border-white/10 mb-5">
+            <button
+              type="button"
+              onClick={() => setQuickMode(true)}
+              className={`flex-1 py-1.5 px-3 rounded-lg text-sm font-semibold transition-all ${quickMode ? 'bg-[#00d4aa] text-[#0f0f1a]' : 'text-gray-400 hover:text-white'}`}
+            >
+              Quick Log
+            </button>
+            <button
+              type="button"
+              onClick={() => setQuickMode(false)}
+              className={`flex-1 py-1.5 px-3 rounded-lg text-sm font-semibold transition-all ${!quickMode ? 'bg-[#00d4aa] text-[#0f0f1a]' : 'text-gray-400 hover:text-white'}`}
+            >
+              Full Log
+            </button>
+          </div>
 
+          <form
+            onSubmit={e => { e.preventDefault(); handleSave(false) }}
+            className="space-y-4"
+          >
+            {/* Quick mode: show auto-filled values as pills */}
+            {quickMode && (
+              <div>
+                <p className="text-xs text-gray-500 mb-2">Auto-filling with your most used:</p>
+                <div className="flex flex-wrap gap-2">
+                  {[form.sport, form.sportsbook, form.betType, form.date, 'Pending'].map(val => (
+                    <span key={val} className="text-xs bg-white/5 border border-white/10 text-gray-400 px-2.5 py-1 rounded-lg">{val}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Full mode: date, sport, sportsbook, bet type */}
+            {!quickMode && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Date</label>
+                    <input
+                      type="date"
+                      value={form.date}
+                      onChange={e => set('date', e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Sport</label>
+                    <select value={form.sport} onChange={e => set('sport', e.target.value)} className={inputClass}>
+                      {SPORTS.map(s => <option key={s}>{s}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Sportsbook</label>
+                    <select value={form.sportsbook} onChange={e => set('sportsbook', e.target.value)} className={inputClass}>
+                      {SPORTSBOOKS.map(s => <option key={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Bet Type</label>
+                    <select value={form.betType} onChange={e => set('betType', e.target.value)} className={inputClass}>
+                      {BET_TYPES.map(b => <option key={b}>{b}</option>)}
+                    </select>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Description — key on savedCount to re-autofocus after each "Add Another" */}
             <div>
               <label className="block text-sm text-gray-400 mb-1">Description</label>
               <input
+                key={savedCount}
                 type="text"
                 placeholder="e.g. Chiefs -3.5 vs Raiders"
                 value={form.description}
                 onChange={e => set('description', e.target.value)}
                 required
-                className="w-full bg-[#0f0f1a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-[#00d4aa]"
+                autoFocus
+                className={inputClass}
               />
             </div>
 
@@ -149,7 +204,7 @@ function Modal({ onClose, onSave }) {
                   value={form.wager}
                   onChange={e => set('wager', e.target.value)}
                   required
-                  className="w-full bg-[#0f0f1a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-[#00d4aa]"
+                  className={inputClass}
                 />
               </div>
               <div>
@@ -160,47 +215,52 @@ function Modal({ onClose, onSave }) {
                   value={form.odds}
                   onChange={e => set('odds', e.target.value)}
                   required
-                  className="w-full bg-[#0f0f1a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-[#00d4aa]"
+                  className={inputClass}
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">Result</label>
-              <div className="grid grid-cols-4 gap-2">
-                {RESULTS.map(r => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => set('result', r)}
-                    className={`py-2 rounded-lg text-sm font-medium transition-all ${
-                      form.result === r
-                        ? r === 'Win' ? 'bg-green-500 text-white'
-                          : r === 'Loss' ? 'bg-red-500 text-white'
-                          : r === 'Push' ? 'bg-yellow-500 text-[#0f0f1a]'
-                          : 'bg-gray-500 text-white'
-                        : 'bg-[#0f0f1a] border border-white/10 text-gray-400 hover:border-white/30'
-                    }`}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Result + coaching toggle: full mode only */}
+            {!quickMode && (
+              <>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Result</label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {RESULTS.map(r => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => set('result', r)}
+                        className={`py-2 rounded-lg text-sm font-medium transition-all ${
+                          form.result === r
+                            ? r === 'Win' ? 'bg-green-500 text-white'
+                              : r === 'Loss' ? 'bg-red-500 text-white'
+                              : r === 'Push' ? 'bg-yellow-500 text-[#0f0f1a]'
+                              : 'bg-gray-500 text-white'
+                            : 'bg-[#0f0f1a] border border-white/10 text-gray-400 hover:border-white/30'
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            <div className="flex items-center justify-between bg-[#0f0f1a] border border-white/10 rounded-lg px-3 py-2.5">
-              <div>
-                <p className="text-sm text-white font-medium">Following coaching today?</p>
-                <p className="text-xs text-gray-600 mt-0.5">Tracks your coached vs uncoached win rate</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => set('followingCoaching', !form.followingCoaching)}
-                className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${form.followingCoaching ? 'bg-[#00d4aa]' : 'bg-white/10'}`}
-              >
-                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${form.followingCoaching ? 'translate-x-5' : 'translate-x-0'}`} />
-              </button>
-            </div>
+                <div className="flex items-center justify-between bg-[#0f0f1a] border border-white/10 rounded-lg px-3 py-2.5">
+                  <div>
+                    <p className="text-sm text-white font-medium">Following coaching today?</p>
+                    <p className="text-xs text-gray-600 mt-0.5">Tracks your coached vs uncoached win rate</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => set('followingCoaching', !form.followingCoaching)}
+                    className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${form.followingCoaching ? 'bg-[#00d4aa]' : 'bg-white/10'}`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${form.followingCoaching ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+              </>
+            )}
 
             {validPayout && (
               <div className="bg-[#0f0f1a] rounded-lg p-3 border border-white/10 space-y-1">
@@ -225,16 +285,24 @@ function Modal({ onClose, onSave }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-3 rounded-xl border border-white/10 text-gray-400 hover:text-white hover:border-white/30 transition-colors text-sm font-medium"
+                className="px-4 py-3 rounded-xl border border-white/10 text-gray-400 hover:text-white hover:border-white/30 transition-colors text-sm font-medium"
               >
                 Cancel
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => handleSave(true)}
+                className="flex-1 py-3 rounded-xl border border-[#00d4aa]/40 text-[#00d4aa] font-semibold text-sm hover:bg-[#00d4aa]/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? 'Saving…' : '+ Add Another'}
               </button>
               <button
                 type="submit"
                 disabled={saving}
                 className="flex-1 py-3 rounded-xl bg-[#00d4aa] text-[#0f0f1a] font-bold text-sm hover:bg-[#00bfa0] hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                {saving ? 'Saving…' : 'Save Bet'}
+                {saving ? 'Saving…' : 'Save & Close'}
               </button>
             </div>
           </form>
@@ -359,7 +427,7 @@ function BetLog() {
         </div>
       )}
 
-      {showModal && <Modal onClose={() => setShowModal(false)} onSave={addBet} />}
+      {showModal && <Modal onClose={() => setShowModal(false)} onSave={addBet} bets={bets} />}
     </div>
   )
 }
