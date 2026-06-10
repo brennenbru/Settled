@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useBets } from '../context/BetsContext'
@@ -16,19 +16,53 @@ function Navbar() {
   const navigate = useNavigate()
   const { user } = useBets()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [dragY, setDragY] = useState(0)
+  const [dismissing, setDismissing] = useState(false)
+  const touchStartY = useRef(0)
 
   useEffect(() => {
     document.body.style.overflow = drawerOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [drawerOpen])
 
+  // Reset drag state whenever drawer opens
+  useEffect(() => {
+    if (drawerOpen) { setDragY(0); setDismissing(false) }
+  }, [drawerOpen])
+
+  const dismissDrawer = () => {
+    setDismissing(true)
+    setTimeout(() => {
+      setDismissing(false)
+      setDragY(0)
+      setDrawerOpen(false)
+    }, 260)
+  }
+
+  const handleTouchStart = (e) => {
+    touchStartY.current = e.touches[0].clientY
+  }
+
+  const handleTouchMove = (e) => {
+    const delta = e.touches[0].clientY - touchStartY.current
+    if (delta > 0) setDragY(delta)
+  }
+
+  const handleTouchEnd = () => {
+    if (dragY > 80) {
+      dismissDrawer()
+    } else {
+      setDragY(0)
+    }
+  }
+
   const handleSignOut = async () => {
-    setDrawerOpen(false)
+    dismissDrawer()
     await supabase.auth.signOut()
     navigate('/auth')
   }
 
-  const closeDrawer = () => setDrawerOpen(false)
+  const closeDrawer = () => dismissDrawer()
 
   return (
     <>
@@ -80,22 +114,21 @@ function Navbar() {
           />
 
           {/* Slide-up panel — z-[60] sits above backdrop and bottom nav */}
-          <div className="md:hidden fixed bottom-0 left-0 right-0 z-[60] flex flex-col max-h-[85vh] bg-[#1a1a2e] border-t border-white/10 rounded-t-2xl shadow-2xl animate-slide-up">
-
-            {/* Fixed header: drag handle + close — never scrolls away */}
-            <div className="relative flex items-center justify-between px-5 pt-4 pb-2 shrink-0">
-              <div className="w-10 h-1 bg-white/20 rounded-full absolute left-1/2 -translate-x-1/2 top-3" />
-              <div className="flex-1" />
-              <button
-                onClick={closeDrawer}
-                className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-                aria-label="Close menu"
-              >
-                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
+          <div
+            className="md:hidden fixed bottom-0 left-0 right-0 z-[60] flex flex-col max-h-[85vh] bg-[#1a1a2e] border-t border-white/10 rounded-t-2xl shadow-2xl animate-slide-up"
+            style={{
+              transform: dismissing ? 'translateY(100%)' : `translateY(${dragY}px)`,
+              transition: (dragY === 0 || dismissing) ? 'transform 0.26s cubic-bezier(0.32, 0.72, 0, 1)' : 'none',
+            }}
+          >
+            {/* Drag handle — touch target for swipe-to-dismiss */}
+            <div
+              className="flex justify-center pt-3 pb-2 shrink-0 cursor-grab active:cursor-grabbing"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              <div className="w-10 h-1 bg-white/20 rounded-full" />
             </div>
 
             {/* Scrollable body — overflows before the panel grows past 85vh */}
