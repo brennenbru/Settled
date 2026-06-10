@@ -139,14 +139,21 @@ function AIInsights({ bets }) {
   const [errorMsg, setErrorMsg] = useState('')
 
   const analyze = async () => {
+    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
+    if (!apiKey) {
+      setErrorMsg('API key is not configured. Add VITE_ANTHROPIC_API_KEY to your .env file.')
+      setState('error')
+      return
+    }
+
     setState('loading')
     setErrorMsg('')
     try {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY ?? '',
+          'content-type': 'application/json',
+          'x-api-key': apiKey,
           'anthropic-version': '2023-06-01',
           'anthropic-dangerous-direct-browser-access': 'true',
         },
@@ -160,15 +167,23 @@ function AIInsights({ bets }) {
           }],
         }),
       })
-      if (!res.ok) throw new Error(`API error ${res.status}`)
+
       const data = await res.json()
+      console.log('Anthropic API response:', data)
+
+      if (!res.ok) {
+        const msg = data?.error?.message ?? `HTTP ${res.status}`
+        throw new Error(msg)
+      }
+
       const text = data.content?.[0]?.text ?? ''
       const parsed = JSON.parse(text)
       if (!Array.isArray(parsed)) throw new Error('Invalid response format')
       setInsights(parsed)
       setState('done')
     } catch (err) {
-      setErrorMsg('Unable to analyze bets right now. Check your API key or try again.')
+      console.error('Anthropic API error:', err)
+      setErrorMsg(err.message || 'Unable to analyze bets right now. Try again.')
       setState('error')
     }
   }
