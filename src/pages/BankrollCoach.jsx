@@ -177,7 +177,8 @@ function AIInsights({ bets }) {
       }
 
       const text = data.content?.[0]?.text ?? ''
-      const parsed = JSON.parse(text)
+      const clean = text.replace(/```json|```/g, '').trim()
+      const parsed = JSON.parse(clean)
       if (!Array.isArray(parsed)) throw new Error('Invalid response format')
       setInsights(parsed)
       setState('done')
