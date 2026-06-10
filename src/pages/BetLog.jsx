@@ -4,7 +4,7 @@ import { useBets } from '../context/BetsContext'
 const SPORTS = ['NFL', 'NBA', 'MLB', 'NHL', 'NCAA Football', 'NCAA Basketball', 'Soccer', 'Tennis', 'Golf', 'MMA', 'Other']
 const SPORTSBOOKS = ['DraftKings', 'FanDuel', 'BetMGM', 'Caesars', 'Fanatics', 'PointsBet', 'Other']
 const BET_TYPES = ['Moneyline', 'Spread', 'Over/Under', 'Parlay', 'Prop', 'Future']
-const RESULTS = ['Pending', 'Win', 'Loss', 'Push']
+const RESULTS = ['Pending', 'Win', 'Loss', 'Push', 'Cashed Out']
 
 function calcProfit(wager, odds) {
   const w = parseFloat(wager)
@@ -13,10 +13,11 @@ function calcProfit(wager, odds) {
   return o > 0 ? w * (o / 100) : w * (100 / Math.abs(o))
 }
 
-function calcActualPL(wager, odds, result) {
+function calcActualPL(wager, odds, result, cashoutAmount) {
   if (result === 'Win') return calcProfit(wager, odds)
   if (result === 'Loss') return -parseFloat(wager)
   if (result === 'Push') return 0
+  if (result === 'Cashed Out' && cashoutAmount != null) return parseFloat(cashoutAmount) - parseFloat(wager)
   return null
 }
 
@@ -27,6 +28,7 @@ const RESULT_STYLES = {
   Loss: 'bg-red-500/20 text-red-400 border border-red-500/30',
   Push: 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30',
   Pending: 'bg-gray-500/20 text-gray-400 border border-gray-500/30',
+  'Cashed Out': 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30',
 }
 
 function getMostUsed(bets, key, fallback) {
@@ -58,6 +60,7 @@ function Modal({ onClose, onSave, bets }) {
     wager: getLastWager(),
     odds: '',
     result: 'Pending',
+    cashoutAmount: '',
     followingCoaching: false,
   }))
 
@@ -72,21 +75,24 @@ function Modal({ onClose, onSave, bets }) {
 
   const handleSave = async (keepOpen) => {
     if (!form.wager || !form.odds || !form.description) return
+    if (form.result === 'Cashed Out' && !form.cashoutAmount) return
     setSaving(true)
     setSaveError(null)
     persistLastWager(form.wager)
+    const cashoutAmount = form.result === 'Cashed Out' ? parseFloat(form.cashoutAmount) : null
     const { error } = await onSave({
       ...form,
       wager: parseFloat(form.wager),
       odds: parseInt(form.odds),
       profit: calcProfit(form.wager, form.odds),
-      actualPL: calcActualPL(form.wager, form.odds, form.result),
+      actualPL: calcActualPL(form.wager, form.odds, form.result, cashoutAmount),
+      cashoutAmount,
     })
     setSaving(false)
     if (error) {
       setSaveError(error)
     } else if (keepOpen) {
-      setForm(f => ({ ...f, description: '', odds: '' }))
+      setForm(f => ({ ...f, description: '', odds: '', cashoutAmount: '' }))
       setSavedCount(c => c + 1)
     } else {
       onClose()
@@ -178,7 +184,7 @@ function Modal({ onClose, onSave, bets }) {
               </>
             )}
 
-            {/* Description — key on savedCount to re-autofocus after each "Add Another" */}
+            {/* Description */}
             <div>
               <label className="block text-sm text-gray-400 mb-1">Description</label>
               <input
@@ -225,26 +231,49 @@ function Modal({ onClose, onSave, bets }) {
               <>
                 <div>
                   <label className="block text-sm text-gray-400 mb-1">Result</label>
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-5 gap-1.5">
                     {RESULTS.map(r => (
                       <button
                         key={r}
                         type="button"
                         onClick={() => set('result', r)}
-                        className={`py-2 rounded-lg text-sm font-medium transition-all ${
+                        className={`py-2 rounded-lg text-xs font-medium transition-all ${
                           form.result === r
                             ? r === 'Win' ? 'bg-green-500 text-white'
                               : r === 'Loss' ? 'bg-red-500 text-white'
                               : r === 'Push' ? 'bg-yellow-500 text-[#0f0f1a]'
+                              : r === 'Cashed Out' ? 'bg-cyan-500 text-white'
                               : 'bg-gray-500 text-white'
                             : 'bg-[#0f0f1a] border border-white/10 text-gray-400 hover:border-white/30'
                         }`}
                       >
-                        {r}
+                        {r === 'Cashed Out' ? 'Cash Out' : r}
                       </button>
                     ))}
                   </div>
                 </div>
+
+                {/* Cashout amount field — only shown when Cashed Out is selected */}
+                {form.result === 'Cashed Out' && (
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Cash Out Amount ($)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={form.cashoutAmount}
+                      onChange={e => set('cashoutAmount', e.target.value)}
+                      required
+                      className={inputClass}
+                    />
+                    {form.cashoutAmount && form.wager && (
+                      <p className={`text-xs mt-1 ${parseFloat(form.cashoutAmount) >= parseFloat(form.wager) ? 'text-green-400' : 'text-red-400'}`}>
+                        P&L: {parseFloat(form.cashoutAmount) >= parseFloat(form.wager) ? '+' : ''}${(parseFloat(form.cashoutAmount) - parseFloat(form.wager)).toFixed(2)}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between bg-[#0f0f1a] border border-white/10 rounded-lg px-3 py-2.5">
                   <div>
@@ -262,7 +291,7 @@ function Modal({ onClose, onSave, bets }) {
               </>
             )}
 
-            {validPayout && (
+            {validPayout && form.result !== 'Cashed Out' && (
               <div className="bg-[#0f0f1a] rounded-lg p-3 border border-white/10 space-y-1">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Potential profit</span>
@@ -312,13 +341,25 @@ function Modal({ onClose, onSave, bets }) {
   )
 }
 
-function BetCard({ bet, onDelete }) {
+function BetCard({ bet, onDelete, onSettle }) {
+  const [cashingOut, setCashingOut] = useState(false)
+  const [cashoutInput, setCashoutInput] = useState('')
+  const [settling, setSettling] = useState(false)
+
   const pl = bet.actualPL
   const hasPL = pl !== null
 
+  const handleSettle = async (result, cashoutAmount = null) => {
+    setSettling(true)
+    await onSettle(bet.id, result, cashoutAmount)
+    setSettling(false)
+    setCashingOut(false)
+    setCashoutInput('')
+  }
+
   return (
     <div className="bg-[#1a1a2e] rounded-2xl p-5 border border-white/5 shadow-lg hover:border-white/10 hover:-translate-y-0.5 transition-all duration-200">
-      <div className="flex items-start justify-between gap-3 mb-4">
+      <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1 min-w-0">
           <p className="text-white font-bold text-sm leading-tight truncate tracking-tight">{bet.description}</p>
           <p className="text-gray-500 text-xs mt-1 font-medium">{bet.sport} · {bet.sportsbook} · {bet.betType}</p>
@@ -336,6 +377,67 @@ function BetCard({ bet, onDelete }) {
           </button>
         </div>
       </div>
+
+      {/* Quick settle buttons — only on pending bets */}
+      {bet.result === 'Pending' && (
+        cashingOut ? (
+          <div className="mb-4 space-y-2">
+            <p className="text-xs text-gray-400">How much did you cash out for?</p>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none">$</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={cashoutInput}
+                  onChange={e => setCashoutInput(e.target.value)}
+                  autoFocus
+                  className="w-full bg-[#0f0f1a] border border-white/10 rounded-lg pl-6 pr-3 py-2 text-white text-sm focus:outline-none focus:border-[#00d4aa]"
+                />
+              </div>
+              <button
+                onClick={() => handleSettle('Cashed Out', parseFloat(cashoutInput))}
+                disabled={!cashoutInput || isNaN(parseFloat(cashoutInput)) || settling}
+                className="px-3 py-2 rounded-lg bg-[#00d4aa] text-[#0f0f1a] text-xs font-bold disabled:opacity-40 hover:bg-[#00bfa0] transition-colors"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => { setCashingOut(false); setCashoutInput('') }}
+                className="px-3 py-2 rounded-lg border border-white/10 text-gray-400 text-xs hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => handleSettle('Win')}
+              disabled={settling}
+              className="flex-1 py-1.5 rounded-lg bg-green-500/20 text-green-400 border border-green-500/30 text-xs font-semibold hover:bg-green-500/30 transition-colors disabled:opacity-40"
+            >
+              Win
+            </button>
+            <button
+              onClick={() => handleSettle('Loss')}
+              disabled={settling}
+              className="flex-1 py-1.5 rounded-lg bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-semibold hover:bg-red-500/30 transition-colors disabled:opacity-40"
+            >
+              Loss
+            </button>
+            <button
+              onClick={() => setCashingOut(true)}
+              disabled={settling}
+              className="flex-1 py-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 text-xs font-semibold hover:bg-cyan-500/20 transition-colors disabled:opacity-40"
+            >
+              Cash Out
+            </button>
+          </div>
+        )
+      )}
 
       <div className="grid grid-cols-4 gap-2 text-center">
         <div>
@@ -374,6 +476,11 @@ function SummaryBar({ bets }) {
   const wins = bets.filter(b => b.result === 'Win').length
   const losses = bets.filter(b => b.result === 'Loss').length
   const pushes = bets.filter(b => b.result === 'Push').length
+  const cashedOut = bets.filter(b => b.result === 'Cashed Out').length
+
+  const record = cashedOut > 0
+    ? `${wins}-${losses}-${pushes}-${cashedOut}C`
+    : `${wins}-${losses}-${pushes}`
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -385,7 +492,7 @@ function SummaryBar({ bets }) {
           value: totalPL >= 0 ? `+$${totalPL.toFixed(2)}` : `-$${Math.abs(totalPL).toFixed(2)}`,
           color: totalPL > 0 ? 'text-green-400' : totalPL < 0 ? 'text-red-400' : 'text-yellow-400',
         },
-        { label: 'Record', value: `${wins}-${losses}-${pushes}` },
+        { label: 'Record', value: record },
       ].map(({ label, value, color }) => (
         <div key={label} className="bg-[#1a1a2e] rounded-2xl p-5 border border-white/5 shadow-lg hover:border-white/10 hover:-translate-y-0.5 transition-all duration-200">
           <p className="text-gray-500 text-[10px] mb-1.5 uppercase tracking-widest font-semibold">{label}</p>
@@ -397,7 +504,7 @@ function SummaryBar({ bets }) {
 }
 
 function BetLog() {
-  const { bets, addBet, deleteBet } = useBets()
+  const { bets, addBet, updateBet, deleteBet } = useBets()
   const [showModal, setShowModal] = useState(false)
 
   return (
@@ -422,7 +529,7 @@ function BetLog() {
       ) : (
         <div className="space-y-3">
           {bets.map(bet => (
-            <BetCard key={bet.id} bet={bet} onDelete={deleteBet} />
+            <BetCard key={bet.id} bet={bet} onDelete={deleteBet} onSettle={updateBet} />
           ))}
         </div>
       )}

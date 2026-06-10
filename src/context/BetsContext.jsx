@@ -19,6 +19,12 @@ function calcActualPL(wager, odds, result) {
 
 // Convert a Supabase row (snake_case) → UI bet object (camelCase + computed fields)
 function fromSupabase(row) {
+  const cashoutAmount = row.cashout_amount ?? null
+  const result = row.result
+  const actualPL = result === 'Cashed Out' && cashoutAmount != null
+    ? cashoutAmount - row.wager
+    : calcActualPL(row.wager, row.odds, result)
+
   return {
     id: row.id,
     date: row.date,
@@ -28,19 +34,19 @@ function fromSupabase(row) {
     description: row.description,
     wager: row.wager,
     odds: row.odds,
-    result: row.result,
+    result,
     followingCoaching: row.following_coaching,
+    cashoutAmount,
     profit: calcProfit(row.wager, row.odds),
-    actualPL: calcActualPL(row.wager, row.odds, row.result),
+    actualPL,
   }
 }
 
 // Convert a UI bet object (camelCase) → Supabase row (snake_case, exact columns only)
-// Explicit type coercions guard against NaN / undefined slipping through.
 function toSupabase(bet, userId) {
-  return {
+  const row = {
     user_id: String(userId),
-    date: String(bet.date),           // YYYY-MM-DD
+    date: String(bet.date),
     sport: String(bet.sport),
     sportsbook: String(bet.sportsbook),
     bet_type: String(bet.betType),
@@ -50,6 +56,10 @@ function toSupabase(bet, userId) {
     result: String(bet.result),
     following_coaching: Boolean(bet.followingCoaching),
   }
+  if (bet.cashoutAmount != null) {
+    row.cashout_amount = Number(bet.cashoutAmount)
+  }
+  return row
 }
 
 export function BetsProvider({ children }) {
@@ -132,6 +142,39 @@ export function BetsProvider({ children }) {
     }
   }
 
+  // ── updateBet — update result (and optionally cashout amount) ───────────────
+  const updateBet = async (id, result, cashoutAmount = null) => {
+    const updates = { result }
+    if (cashoutAmount != null) updates.cashout_amount = cashoutAmount
+
+    if (user) {
+      const { data, error } = await supabase
+        .from('bets')
+        .update(updates)
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('[updateBet] Supabase error:', error)
+        return { error: error.message }
+      }
+
+      setBets(prev => prev.map(b => b.id === id ? fromSupabase(data) : b))
+      return { error: null }
+    } else {
+      setBets(prev => prev.map(b => {
+        if (b.id !== id) return b
+        const actualPL = result === 'Cashed Out' && cashoutAmount != null
+          ? cashoutAmount - b.wager
+          : calcActualPL(b.wager, b.odds, result)
+        return { ...b, result, cashoutAmount, actualPL }
+      }))
+      return { error: null }
+    }
+  }
+
   // ── deleteBet ───────────────────────────────────────────────────────────────
   const deleteBet = async (id) => {
     if (user) {
@@ -150,7 +193,7 @@ export function BetsProvider({ children }) {
   }
 
   return (
-    <BetsContext.Provider value={{ bets, addBet, deleteBet, user }}>
+    <BetsContext.Provider value={{ bets, addBet, updateBet, deleteBet, user }}>
       {children}
     </BetsContext.Provider>
   )
