@@ -158,7 +158,7 @@ function AIInsights({ bets }) {
           'anthropic-dangerous-direct-browser-access': 'true',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 1000,
           system: 'You are an expert sports betting coach analyzing a bettor\'s personal history. Return ONLY a valid JSON array of exactly 5 insight objects. Each object must have: title (string), stat (string, e.g. 2-9 or -$234 or 23%), description (string, one sentence, personal and specific), severity (string, one of: positive, warning, negative). No other text, no markdown, just the raw JSON array.',
           messages: [{
