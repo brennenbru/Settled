@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useBets } from '../context/BetsContext'
@@ -16,6 +16,11 @@ function Navbar() {
   const navigate = useNavigate()
   const { user } = useBets()
   const [drawerOpen, setDrawerOpen] = useState(false)
+
+  useEffect(() => {
+    document.body.style.overflow = drawerOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [drawerOpen])
 
   const handleSignOut = async () => {
     setDrawerOpen(false)
@@ -94,7 +99,7 @@ function Navbar() {
             </div>
 
             {/* Scrollable body — overflows before the panel grows past 85vh */}
-            <div className="overflow-y-auto" style={{ paddingBottom: '100px' }}>
+            <div className="overflow-y-auto pb-8">
               {/* User email */}
               <div className="px-5 py-3">
                 <p className="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-0.5">Signed in as</p>
